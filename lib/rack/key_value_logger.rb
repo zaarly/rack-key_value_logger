@@ -72,7 +72,7 @@ module Rack
         msg << "runtime=#{((Time.now - start) * 1000).round(5)}"
         msg << "log_source=key_value_logger"
 
-        if status.to_s =~ /^4[0-9]{2}/
+        if status.to_s =~ /^4[0-9]{2}/ && @opts[:log_failure_response_bodies]
           response = Rack::Response.new(body, status, headers)
           msg << "response_body=#{MultiJson.encode(response.body)}"
         end
