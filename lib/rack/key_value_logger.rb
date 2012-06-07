@@ -71,7 +71,7 @@ module Rack
         msg << "runtime=#{((Time.now - start) * 1000).round(5)}"
         msg << "log_source=key_value_logger"
 
-        if status.to_s =~ /40[1-9]+/
+        if status.to_s =~ /^4[0-9]{2}/
           msg << "response_body=#{body}"
         end
         
