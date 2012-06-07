@@ -73,7 +73,7 @@ module Rack
         msg << "log_source=key_value_logger"
 
         if status.to_s =~ /^4[0-9]{2}/
-          msg << "response_body=#{body}"
+          msg << "response_body=#{MultiJson.encode(body)}"
         end
         
         result = msg.join(SEPARATOR)
