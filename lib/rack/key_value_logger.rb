@@ -73,7 +73,8 @@ module Rack
         msg << "log_source=key_value_logger"
 
         if status.to_s =~ /^4[0-9]{2}/
-          msg << "response_body=#{MultiJson.encode(body)}"
+          response = Rack::Response.new(body, status, headers)
+          msg << "response_body=#{MultiJson.encode(response.body)}"
         end
         
         result = msg.join(SEPARATOR)
