@@ -1,4 +1,5 @@
 require 'logger'
+require 'multi_json'
 
 module Rack
   class KeyValueLogger
