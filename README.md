@@ -8,6 +8,11 @@ Structured, key-value logging for your rack apps. Inspired by lograge.
 class App < Sinatra::Base
   use Rack::KeyValueLogger
 end
+
+# To log response bodies for failure response codes
+class App < Sinatra::Base
+  use Rack::KeyValueLogger, :log_failure_response_bodies => true
+end
 ```
 
 ## TODO
