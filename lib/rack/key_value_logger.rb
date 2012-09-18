@@ -92,6 +92,7 @@ module Rack
       result = "[#{Time.now.to_i}] " + result
 
       logger.info result
+      msg.clear
     end
 
     def record_response_attributes(status, headers, body)
