@@ -1,7 +1,6 @@
 require 'spec_helper'
 require 'stringio'
 
-
 describe "logging non success response bodies" do
   $drain = StringIO.new
 
@@ -26,6 +25,10 @@ describe "logging non success response bodies" do
       status 400
       'Fail'
     end
+
+    get '/500' do
+      raise "oh noez!"
+    end
   end
 
   def app
@@ -34,29 +37,57 @@ describe "logging non success response bodies" do
     end
   end
 
+  context 'when an exception is raised' do
+    it "records a log entry" do
+      Rack::MockRequest.new(app).get('/400')
+      $drain.should include_entry "status=400"
+    end
+  end
+
   context 'when the proper option is passed in' do
     it "logs the response body for 401's" do
       Rack::MockRequest.new(app).get('/401')
-      $drain.rewind
-      $drain.read.should =~ /response_body=.*Unauthorized.*/
+      $drain.should include_entry "response_body=.*Unauthorized.*"
     end
 
     it "logs the response body for 400's" do
       Rack::MockRequest.new(app).get('/400')
-      $drain.rewind
-      $drain.read.should =~ /response_body=.*Fail.*/
+      $drain.should include_entry "response_body=.*Fail.*"
     end
 
     it "logs the response body for 422's" do
       res = Rack::MockRequest.new(app).get('/422')
-      $drain.rewind
-      $drain.read.should =~ /response_body=.*errors.*/
+      $drain.should include_entry 'response_body=.*errors.*'
     end
 
-    it 'does not log the response body for success endpoints' do
+  end
+
+  context 'a 200 response' do
+    before do
       Rack::MockRequest.new(app).get('/200')
-      $drain.rewind
-      $drain.read.should_not =~ /response_body=Unauthorized/
     end
+
+    it_behaves_like "it logs", 'status', 200
+
+    it 'does not log the response body for success endpoints' do
+      $drain.should_not include_entry 'response_body=Unauthorized'
+    end
+  end
+
+  context 'a 400 bad request response' do
+    before do
+      Rack::MockRequest.new(app).get('/400')
+    end
+
+    it_behaves_like 'it logs', 'status', 400
+  end
+
+  context 'an unexpected 500 response' do
+    before do
+      Rack::MockRequest.new(app).get('/500')
+    end
+
+    it_behaves_like 'it logs', 'url', '/500'
+    it_behaves_like 'it logs', 'status', 500
   end
 end

@@ -5,14 +5,20 @@ module Rack
   class KeyValueLogger
     SEPARATOR = "|"
 
+    attr_reader :msg, :logger, :opts
+
     # @param opts
     # @option opts :logger A logger instance
     # @option opts :log_failure_response_bodies
+    # @option opts :user_id a string key representing the user id key
+    #   in the session hash. Defaults to 'user_id'
     def initialize(app, opts = {})
       @app, @opts = app, opts
       @opts[:logger] ||= ::Logger.new($stdout)
+      @logger = @opts[:logger]
       @opts[:log_failure_response_bodies] ||= false
       @opts[:user_id] ||= 'user_id'
+      @msg = []
     end
 
     # Logs key=value pairs of useful information about the request and
@@ -38,53 +44,69 @@ module Rack
     #   * http-version - http version of the client
     #   * mobile-device - the mobile device return by rack-mobile-detect
     def call(env)
-      start = Time.now
-      status, headers, body = @app.call(env)
+      start          = Time.now
+      request        = Rack::Request.new(env)
+      user_id        = env['rack.session'] && env['rack.session'][opts[:user_id]]
+      mobile_device  = env['X_MOBILE_DEVICE']
+      url            = request.path
+      query_string   = env['QUERY_STRING']
 
-      if headers['X-Cascade'] && headers['X-Cascade'] == 'pass'
-        return [status, headers, body]
-      end
-
-      logger = @opts[:logger]
+      # record request attributes
+      msg << "method=#{request.request_method}"
+      msg << "url=#{url}"
+      msg << "params=#{query_string}"
+      msg << "user_id=#{user_id}"
+      msg << "scheme=#{request.scheme}"
+      msg << "user_agent=#{request.user_agent}"
+      msg << "remote_ip=#{request.ip}"
+      msg << "http_version=#{env['HTTP_VERSION']}"
+      msg << "mobile_device=#{mobile_device}" if mobile_device
+      msg << "requested_content_type=#{request.content_type}"
+      msg << "log_source=key_value_logger"
 
       begin
-        request        = Rack::Request.new(env)
-        user_id        = env['rack.session'] && env['rack.session'][@opts[:user_id]]
-        content_length = headers['Content-Length']
-        mobile_device  = env['X_MOBILE_DEVICE']
-        url            = request.path
-        query_string   = env['QUERY_STRING']
+        status, headers, body = @app.call(env)
 
-        msg = []
-        msg << "method=#{request.request_method}"
-        msg << "status=#{status}"
-        msg << "url=#{url}"
-        msg << "params=#{query_string}"
-        msg << "user_id=#{user_id}"
-        msg << "scheme=#{request.scheme}"
-        msg << "content-length=#{content_length}"
-        msg << "mobile_device=#{mobile_device}" if mobile_device
-        msg << "requested_content_type=#{request.content_type}"
-        msg << "content_type=#{headers['Content-Type']}"
-        msg << "user_agent=#{request.user_agent}"
-        msg << "remote_ip=#{request.ip}"
-        msg << "http_version=#{env['HTTP_VERSION']}"
-        msg << "runtime=#{((Time.now - start) * 1000).round(5)}"
-        msg << "log_source=key_value_logger"
+        # Don't log Rack::Cascade fake 404's
+        return [status, headers, body] if rack_cascade_404?(headers['X-Cascade'])
 
-        if status.to_s =~ /^4[0-9]{2}/ && @opts[:log_failure_response_bodies]
-          response = Rack::Response.new(body, status, headers)
-          msg << "response_body=#{MultiJson.encode(response.body)}"
-        end
-        
-        result = msg.join(SEPARATOR)
-        result = "[#{Time.now.to_i}] " + result
-
-        logger.info result
+        record_response_attributes(status, headers, body)
       rescue => e
-        $stderr.puts e
+        msg << 'status=500'
+        raise e
+      ensure
+        record_runtime(start)
+        flush_log
       end
+
       [status, headers, body]
+    end
+
+    private
+    def record_runtime(start)
+      msg << "runtime=#{((Time.now - start) * 1000).round(5)}"
+    end
+
+    def flush_log
+      result = msg.join(SEPARATOR)
+      result = "[#{Time.now.to_i}] " + result
+
+      logger.info result
+    end
+
+    def record_response_attributes(status, headers, body)
+      msg << "status=#{status}"
+      msg << "content-length=#{headers['Content-Length']}"
+      msg << "content_type=#{headers['Content-Type']}"
+
+      if status.to_s =~ /^4[0-9]{2}/ && opts[:log_failure_response_bodies]
+        response = Rack::Response.new(body, status, headers)
+        msg << "response_body=#{MultiJson.encode(response.body)}"
+      end
+    end
+
+    def rack_cascade_404?(cascade_header)
+      cascade_header && cascade_header == 'pass'
     end
   end
 end
