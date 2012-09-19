@@ -18,7 +18,6 @@ module Rack
       @logger = @opts[:logger]
       @opts[:log_failure_response_bodies] ||= false
       @opts[:user_id] ||= 'user_id'
-      @msg = []
     end
 
     # Logs key=value pairs of useful information about the request and
@@ -44,6 +43,7 @@ module Rack
     #   * http-version - http version of the client
     #   * mobile-device - the mobile device return by rack-mobile-detect
     def call(env)
+      @msg           = []
       start          = Time.now
       request        = Rack::Request.new(env)
       user_id        = env['rack.session'] && env['rack.session'][opts[:user_id]]
@@ -92,7 +92,6 @@ module Rack
       result = "[#{Time.now.to_i}] " + result
 
       logger.info result
-      msg.clear
     end
 
     def record_response_attributes(status, headers, body)

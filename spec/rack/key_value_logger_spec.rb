@@ -37,6 +37,17 @@ describe "logging non success response bodies" do
     end
   end
 
+  before do
+    $drain.truncate(0) # clear the $drain
+  end
+
+  it "should clear the msg attr out after each log line" do
+    Rack::MockRequest.new(app).get('/200')
+    Rack::MockRequest.new(app).get('/401')
+    $drain.rewind
+    $drain.read.scan('method').size.should == 2
+  end
+
   context 'when an exception is raised' do
     it "records a log entry" do
       Rack::MockRequest.new(app).get('/400')
