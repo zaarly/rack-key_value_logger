@@ -1,3 +1,5 @@
+https://secure.travis-ci.org/[zaarly]/[rack-key_value_logger].png
+
 ## What
 
 Structured, key-value logging for your rack apps. Inspired by lograge.
