@@ -1,5 +1,7 @@
 source :rubygems
 
+gem 'rake'
+
 gemspec
 
 group :test do
