@@ -1,4 +1,4 @@
-https://secure.travis-ci.org/[zaarly]/[rack-key_value_logger].png
+[![Build Status](https://secure.travis-ci.org/[zaarly]/[rack-key_value_logger].png)](http://travis-ci.org/[zaarly]/[rack-key_value_logger])
 
 ## What
 
