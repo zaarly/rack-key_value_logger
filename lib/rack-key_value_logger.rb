@@ -1,0 +1,1 @@
+require 'rack/key_value_logger'
