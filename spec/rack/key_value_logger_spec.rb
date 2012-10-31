@@ -86,3 +86,39 @@ describe "logging non success response bodies" do
     it_behaves_like 'it logs', 'status', 500
   end
 end
+
+describe 'ignoring rack cascade 404s' do
+  let(:logger) { Logger.new(drain) }
+  let(:drain) { StringIO.new }
+
+  let(:app) do
+    cascade_app = lambda do |env|
+      case env['PATH_INFO']
+      when '/success'
+        [200, default_test_headers, ['success']]
+      end
+    end
+
+    log = logger
+    Rack::Builder.app do
+      use Rack::KeyValueLogger, :log_failure_response_bodies => true, :logger => log
+      notfound_app = lambda { |env| [404, default_test_headers, [] ] }
+      run Rack::Cascade.new([notfound_app, cascade_app])
+    end
+  end
+
+  before do
+    do_get '/success'
+  end
+
+  it_behaves_like 'it logs', 'status', '200'
+  it_behaves_like 'it logs', 'url', '/success'
+
+  it 'should not record a 404' do
+    drain.should_not include_entry 'status=400'
+  end
+
+  it 'should only log one entry' do
+    drain.lines.count == 1
+  end
+end
