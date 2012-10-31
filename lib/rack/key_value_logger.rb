@@ -113,9 +113,11 @@ module Rack
       msg << "runtime=#{((Time.now - start) * 1000).round(5)}"
     end
 
+    # Flush `msg` to the logger instance.
     def flush_log
       result = msg.join(SEPARATOR)
-      result = "[#{Time.now.to_i}] " + result
+      now = Time.now
+      result = "[#{now.to_i} #{now.utc}] " + result
 
       logger.info result
     end
