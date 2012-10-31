@@ -67,16 +67,15 @@ module Rack
       begin
         status, headers, body = @app.call(env)
 
-        # Don't log Rack::Cascade fake 404's
-        return [status, headers, body] if rack_cascade_404?(headers['X-Cascade'])
-
         record_response_attributes(status, headers, body)
       rescue => e
         msg << 'status=500'
         raise e
       ensure
         record_runtime(start)
-        flush_log
+
+        # Don't log Rack::Cascade fake 404's
+        flush_log unless rack_cascade_404?(headers)
       end
 
       [status, headers, body]
@@ -105,7 +104,15 @@ module Rack
       end
     end
 
-    def rack_cascade_404?(cascade_header)
+    # Sinatra adds a "X-Cascade" header with a value of "pass" to the response.
+    # This makes it possible to detect whether this is a 404 worth logging,
+    # or just a Rack::Cascade 404.
+    #
+    # @param [Hash, nil] headers the headers hash from the response
+    # @return [Boolean]
+    def rack_cascade_404?(headers)
+      return false if headers.nil?
+      cascade_header = headers['X-Cascade']
       cascade_header && cascade_header == 'pass'
     end
   end

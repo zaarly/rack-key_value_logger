@@ -35,3 +35,8 @@ shared_examples 'it logs' do |field, value|
   end
 end
 
+shared_examples 'it does not log' do |field, value|
+  it "does not log #{field} = #{value}" do
+    drain.should_not include_entry "#{field}=#{value}"
+  end
+end
