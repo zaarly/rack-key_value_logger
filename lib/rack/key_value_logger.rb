@@ -25,8 +25,7 @@ module Rack
     #   in the session hash.
     def initialize(app, opts = {})
       @app, @opts = app, opts
-      @opts[:logger] ||= ::Logger.new($stdout)
-      @logger = @opts[:logger]
+      @logger = @opts[:logger] || ::Logger.new($stdout)
       @opts[:log_failure_response_bodies] ||= false
       @opts[:user_id] ||= 'user_id'
       @ignore_paths = @opts[:ignore_paths]
