@@ -87,38 +87,38 @@ describe "logging non success response bodies" do
   end
 end
 
-describe 'ignoring rack cascade 404s' do
+describe "ignoring certain paths" do
   let(:logger) { Logger.new(drain) }
   let(:drain) { StringIO.new }
 
   let(:app) do
-    cascade_app = lambda do |env|
+    ignore_app = lambda do |env|
       case env['PATH_INFO']
-      when '/success'
-        [200, default_test_headers, ['success']]
+      when '/ignore'
+        [200, default_test_headers, ['ignore me!']]
+      when '/do-not-ignore'
+        [200, default_test_headers, ["don't ignore me!"]]
       end
     end
 
     log = logger
     Rack::Builder.app do
-      use Rack::KeyValueLogger, :log_failure_response_bodies => true, :logger => log
-      notfound_app = lambda { |env| [404, default_test_headers, [] ] }
-      run Rack::Cascade.new([notfound_app, cascade_app])
+      use Rack::KeyValueLogger, :logger => log, :ignore_paths => /^\/ignore/
+      run ignore_app
     end
   end
 
-  before do
-    do_get '/success'
+  it 'does not log anything for ignored paths' do
+    do_get('/ignore')
+    drain.should_not include_entry "url=/ignore"
   end
 
-  it_behaves_like 'it logs', 'status', '200'
-  it_behaves_like 'it logs', 'url', '/success'
+  context 'logging non-ignored paths' do
+    before do
+      do_get '/do-not-ignore'
+    end
 
-  it 'should not record a 404' do
-    drain.should_not include_entry 'status=400'
-  end
-
-  it 'should only log one entry' do
-    drain.lines.count == 1
+    it_behaves_like 'it logs', 'status', '200'
+    it_behaves_like 'it logs', 'url', '/do-not-ignore'
   end
 end

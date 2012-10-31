@@ -5,19 +5,31 @@ module Rack
   class KeyValueLogger
     SEPARATOR = "|"
 
-    attr_reader :msg, :logger, :opts
+    attr_reader :msg, :logger, :opts, :ignore_paths
 
+    # @example Preventing rails assets from being logged
+    #   use Rack::KeyValueLogger, :ignore_paths => /\/assets/
+    #
+    # @example Logging non-success response bodies
+    #   use Rack::KeyValueLogger, :log_failure_response_bodies => true
+    #   # NOTE: Most fields below have been omitted for brevity and replaced with "..."
+    #   # => [1351712789 2012-10-31 19:46:29 UTC] method=GET|url=/422|params=|...|response_body=["{\"errors\"=>{\"key\"=>\"val\"}}"]|runtime=0.07
+    #
     # @param opts
-    # @option opts :logger A logger instance
-    # @option opts :log_failure_response_bodies
-    # @option opts :user_id a string key representing the user id key
-    #   in the session hash. Defaults to 'user_id'
+    # @option opts :logger A logger instance. Defaults to logging to $stdout.
+    # @option opts :log_failure_response_bodies Set to `true` to log response
+    #     bodies for non-success codes. Defaults to false.
+    # @option opts :user_id a string key representing the user id key.
+    #     Defaults to 'user_id'
+    # @option opts :ignore_paths a regular expression indicating url paths we don't want to
+    #   in the session hash.
     def initialize(app, opts = {})
       @app, @opts = app, opts
       @opts[:logger] ||= ::Logger.new($stdout)
       @logger = @opts[:logger]
       @opts[:log_failure_response_bodies] ||= false
       @opts[:user_id] ||= 'user_id'
+      @ignore_paths = @opts[:ignore_paths]
     end
 
     # Logs key=value pairs of useful information about the request and
@@ -51,6 +63,10 @@ module Rack
       url            = request.path
       query_string   = env['QUERY_STRING']
 
+      if ignored_path?(url)
+        return @app.call(env)
+      end
+
       # record request attributes
       msg << "method=#{request.request_method}"
       msg << "url=#{url}"
@@ -82,6 +98,17 @@ module Rack
     end
 
     private
+
+    # Returns true if the passed in `url` argument matches the `ignore_paths`
+    # attribute. Return false otherwise, or if `ignore_paths` is not set.
+    #
+    # @param [String] url a url path
+    # @return [Boolean]
+    def ignored_path?(url)
+      return false if ignore_paths.nil?
+      url =~ ignore_paths
+    end
+
     def record_runtime(start)
       msg << "runtime=#{((Time.now - start) * 1000).round(5)}"
     end
