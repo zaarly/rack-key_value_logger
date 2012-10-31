@@ -10,6 +10,16 @@ require 'rack-key_value_logger'
 require 'rack/key_value_logger'
 require 'debugger'
 
+RSpec.configure do |c|
+  def do_get(url)
+    Rack::MockRequest.new(app).get(url)
+  end
+
+  def default_test_headers
+    {'Content-Type' => 'text/plain'}
+  end
+end
+
 # @example
 #   $drain.should include_entry 'status=500'
 RSpec::Matchers.define :include_entry do |expected|
@@ -21,7 +31,7 @@ end
 
 shared_examples 'it logs' do |field, value|
   it "logs #{field} = #{value}" do
-    $drain.should include_entry "#{field}=#{value}"
+    drain.should include_entry "#{field}=#{value}"
   end
 end
 
