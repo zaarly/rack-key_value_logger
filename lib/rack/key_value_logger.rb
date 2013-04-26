@@ -1,5 +1,6 @@
 require 'logger'
 require 'multi_json'
+require 'active_support/time'
 
 module Rack
   class KeyValueLogger
@@ -67,6 +68,7 @@ module Rack
       end
 
       # record request attributes
+      msg << "ts=#{Time.now.utc.iso8601}"
       msg << "method=#{request.request_method}"
       msg << "url=#{url}"
       msg << "params=#{query_string}"
@@ -115,9 +117,6 @@ module Rack
     # Flush `msg` to the logger instance.
     def flush_log
       result = msg.join(SEPARATOR)
-      now = Time.now
-      result = "[#{now.to_i} #{now.utc}] " + result
-
       logger.info result
     end
 

@@ -21,4 +21,5 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'multi_json'
   s.add_dependency 'rack'
+  s.add_dependency 'activesupport'
 end
