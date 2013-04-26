@@ -15,7 +15,7 @@ separated by a "=" character. Pairs are separated by pipe ("|") characters.
 Here's an example of what a log line looks like:
 
 ```
-[1351714706 2012-10-31 20:18:26 UTC] method=GET|url=/homepage|params=page=2|user_id=123|scheme=http|user_agent=curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8r zlib/1.2.5|remote_ip=127.0.0.1|http_version=HTTP/1.1|requested_content_type=text/html|log_source=key_value_logger|status=200|content-length=111|content_type=text/html|runtime=21.553
+ts=2013-04-26T01:14:36Z|method=GET|url=/homepage|params=page=2|user_id=123|scheme=http|user_agent=curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8r zlib/1.2.5|remote_ip=127.0.0.1|http_version=HTTP/1.1|requested_content_type=text/html|log_source=key_value_logger|status=200|content-length=111|content_type=text/html|runtime=21.553
 ```
 
 ## Get Started
