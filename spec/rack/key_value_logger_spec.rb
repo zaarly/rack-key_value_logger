@@ -58,6 +58,7 @@ describe "logging non success response bodies" do
     end
 
     it_behaves_like "it logs", 'status', 200
+    it_behaves_like "it logs", 'ts', Time.now.utc.iso8601
 
     it 'does not log the response body for success endpoints' do
       drain.should_not include_entry 'response_body=Unauthorized'
@@ -70,6 +71,7 @@ describe "logging non success response bodies" do
     end
 
     it_behaves_like 'it logs', 'status', 400
+    it_behaves_like "it logs", 'ts', Time.now.utc.iso8601
   end
 
   context 'an unexpected 500 response' do
@@ -84,6 +86,7 @@ describe "logging non success response bodies" do
 
     it_behaves_like 'it logs', 'url', '/500'
     it_behaves_like 'it logs', 'status', 500
+    it_behaves_like "it logs", 'ts', Time.now.utc.iso8601
   end
 end
 
@@ -120,5 +123,6 @@ describe "ignoring certain paths" do
 
     it_behaves_like 'it logs', 'status', '200'
     it_behaves_like 'it logs', 'url', '/do-not-ignore'
+    it_behaves_like "it logs", 'ts', Time.now.utc.iso8601
   end
 end
