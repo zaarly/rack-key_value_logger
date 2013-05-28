@@ -1,3 +1,6 @@
+## 0.4.1
+* Add tagged logging support (@anveo)
+
 ## 0.4.0
 
 * BREAKING: Changed the timestamp format from a non-structured weird prepended message to a normal `ts` field.
