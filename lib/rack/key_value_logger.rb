@@ -62,6 +62,7 @@ module Rack
       mobile_device  = env['X_MOBILE_DEVICE']
       url            = request.path
       query_string   = env['QUERY_STRING']
+      request_id     = env['action_dispatch.request_id'] || env['HTTP_X_REQUEST_ID']
 
       if ignored_path?(url)
         return @app.call(env)
@@ -69,6 +70,7 @@ module Rack
 
       # record request attributes
       msg << "ts=#{Time.now.utc.iso8601}"
+      msg << "request_id=#{request_id}" if request_id
       msg << "method=#{request.request_method}"
       msg << "url=#{url}"
       msg << "params=#{query_string}"
